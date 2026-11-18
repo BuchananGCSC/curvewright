@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Browser-based data analysis for iPad: data table, calculated columns, graphs, curve fits, statistics, and FFT.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E">
+<title>Curvewright</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #eef2f0;
+    --surface: #ffffff;
+    --surface-2: #f4f7f6;
+    --surface-3: #e7ede9;
+    --border: #d3ded9;
+    --ink: #16231f;
+    --ink-soft: #4c5b57;
+    --ink-faint: #7c8b86;
+    --primary: #0f6e6b;
+    --primary-ink: #ffffff;
+    --primary-soft: #e2f1ef;
+    --primary-soft-ink: #0a4d4b;
+    --accent: #c96a2a;
+    --accent-soft: #fbe9d9;
+    --danger: #a8384f;
+    --danger-soft: #fbe6ea;
+    --success: #4d7c3a;
+    --grid-line: #ccd9d4;
+    --focus: #2a8ea8;
+    --shadow: 0 1px 2px rgba(15,35,30,.06), 0 6px 16px rgba(15,35,30,.06);
+    --s1: #0f6e6b; --s2: #c96a2a; --s3: #4a5b9e; --s4: #a8384f; --s5: #6f8a3a; --s6: #55707a;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101815;
+      --surface: #17211e;
+      --surface-2: #1c2723;
+      --surface-3: #24322d;
+      --border: #2d3d37;
+      --ink: #e7efec;
+      --ink-soft: #a9beb7;
+      --ink-faint: #77897f;
+      --primary: #3fbdb3;
+      --primary-ink: #06231f;
+      --primary-soft: #1a3532;
+      --primary-soft-ink: #7fdcd3;
+      --accent: #e2924f;
+      --accent-soft: #3a2c1c;
+      --danger: #e17e93;
+      --danger-soft: #3a1f26;
+      --success: #8dc46f;
+      --grid-line: #2d3d37;
+      --focus: #5cc3dd;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+      --s1: #3fbdb3; --s2: #e2924f; --s3: #8b9ce8; --s4: #e17e93; --s5: #a3c465; --s6: #8fa6ae;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101815; --surface: #17211e; --surface-2: #1c2723; --surface-3: #24322d;
+    --border: #2d3d37; --ink: #e7efec; --ink-soft: #a9beb7; --ink-faint: #77897f;
+    --primary: #3fbdb3; --primary-ink: #06231f; --primary-soft: #1a3532; --primary-soft-ink: #7fdcd3;
+    --accent: #e2924f; --accent-soft: #3a2c1c; --danger: #e17e93; --danger-soft: #3a1f26;
+    --success: #8dc46f; --grid-line: #2d3d37; --focus: #5cc3dd;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+    --s1: #3fbdb3; --s2: #e2924f; --s3: #8b9ce8; --s4: #e17e93; --s5: #a3c465; --s6: #8fa6ae;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    font-size: 14px; line-height: 1.45; -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  ::selection { background: var(--primary-soft); color: var(--primary-soft-ink); }
+  code { font-family: var(--mono); background: var(--surface-3); border-radius: 4px; padding: 0 4px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---- App shell ---- */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header.topbar {
+    position: sticky; top: 0; z-index: 30; background: var(--surface);
+    border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .topbar-inner { display: flex; align-items: center; gap: 14px; padding: 10px 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 9px; margin-right: 6px; }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--primary); color: var(--primary-ink);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .brand-name { font-weight: 600; font-size: 16.5px; letter-spacing: -0.01em; }
+  .toolbar-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .divider-v { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+
+  button.btn {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 10px 14px;
+    cursor: pointer; font-weight: 500; line-height: 1.2; white-space: nowrap; min-height: 40px;
+    transition: background .12s, border-color .12s;
+  }
+  button.btn:hover { background: var(--surface-3); }
+  button.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  button.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  button.btn.primary:hover { filter: brightness(1.06); }
+  button.btn.ghost { background: transparent; border-color: transparent; }
+  button.btn.ghost:hover { background: var(--surface-2); }
+  button.btn.small { padding: 8px 11px; font-size: 12.5px; border-radius: 6px; min-height: 34px; }
+  button.btn.danger { color: var(--danger); }
+  button.btn:disabled { opacity: .45; cursor: not-allowed; }
+  button.icon-btn {
+    border: none; background: transparent; color: var(--ink-soft); cursor: pointer; border-radius: 7px;
+    padding: 8px; display: inline-flex; align-items: center; justify-content: center; min-width: 34px; min-height: 34px;
+  }
+  button.icon-btn:hover { background: var(--surface-3); color: var(--ink); }
+  button.icon-btn svg { width: 16px; height: 16px; }
+
+  /* ---- Layout ---- */
+  main.workspace {
+    flex: 1; display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 14px;
+    padding: 14px; align-items: start;
+  }
+  @media (max-width: 900px) {
+    main.workspace { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+  }
+  .panel-head h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+  .panel-body { padding: 10px 12px; }
+
+  /* ---- Data table ---- */
+  .table-scroll { overflow: auto; max-height: 62vh; border-radius: 0 0 12px 12px; }
+  table.datatable { border-collapse: collapse; width: 100%; min-width: 100%; }
+  table.datatable th, table.datatable td { border: 1px solid var(--border); padding: 0; }
+  table.datatable thead th {
+    position: sticky; top: 0; background: var(--surface-2); z-index: 2; padding: 6px 8px;
+    vertical-align: top; min-width: 108px;
+  }
+  table.datatable thead th.rowhead-col { min-width: 34px; width: 34px; left: 0; z-index: 3; }
+  .col-head-label { display: flex; align-items: center; gap: 4px; font-weight: 600; font-size: 12.5px; }
+  .col-head-label .swatch { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+  .col-head-unit { font-size: 11px; color: var(--ink-faint); font-family: var(--mono); margin-top: 1px; }
+  .col-head-formula { font-size: 10.5px; color: var(--primary); font-family: var(--mono); margin-top: 2px; word-break: break-all; }
+  .col-head-actions { display: flex; gap: 2px; margin-top: 3px; }
+  table.datatable tbody th {
+    position: sticky; left: 0; background: var(--surface-2); font-family: var(--mono); font-size: 11.5px;
+    color: var(--ink-faint); text-align: center; width: 34px; font-weight: 400;
+  }
+  table.datatable td input {
+    width: 100%; border: none; background: transparent; padding: 10px 8px; text-align: right;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); min-height: 40px;
+  }
+  table.datatable td input:focus { outline: 2px solid var(--focus); outline-offset: -2px; background: var(--primary-soft); }
+  table.datatable td.derived input { color: var(--ink-soft); font-style: italic; }
+  table.datatable tbody tr:hover td { background: var(--surface-2); }
+  table.datatable tbody tr.ghost-row th, table.datatable tbody tr.ghost-row td input { color: var(--ink-faint); }
+  table.datatable tbody tr.ghost-row input::placeholder { color: var(--ink-faint); }
+  .table-footer { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border); background: var(--surface-2); flex-wrap: wrap; }
+
+  /* ---- Graphs ---- */
+  .graphs-col { display: flex; flex-direction: column; gap: 14px; }
+  .graph-card { }
+  .graph-controls { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 10px 12px; border-bottom: 1px solid var(--border); align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); font-weight: 600; }
+  .field select, .field input[type=text], .field input[type=number] {
+    border: 1px solid var(--border); background: var(--surface-2); border-radius: 7px; padding: 9px 8px; min-width: 108px; min-height: 38px;
+  }
+  .field input[type=number] { width: 84px; min-width: 0; font-family: var(--mono); }
+  .chip-select { display: flex; flex-wrap: wrap; gap: 6px; max-width: 240px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 11px 7px 8px; cursor: pointer; font-size: 12.5px; background: var(--surface-2); user-select: none; min-height: 34px;
+  }
+  .chip .swatch { width: 8px; height: 8px; border-radius: 50%; }
+  .chip.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary-soft-ink); font-weight: 500; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: none; background: var(--surface-2); padding: 9px 12px; min-height: 38px; cursor: pointer; color: var(--ink-soft); font-weight: 500; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button.active { background: var(--primary); color: var(--primary-ink); }
+  .chart-wrap { position: relative; height: 300px; padding: 10px 12px; }
+  .chart-wrap canvas { width: 100% !important; height: 100% !important; }
+  .region-controls { display: flex; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--border); flex-wrap: wrap; align-items: center; background: var(--surface-2); }
+  .region-controls .hint { font-size: 11.5px; color: var(--ink-faint); }
+  .results-box { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .results-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: baseline; }
+  .eqn { font-family: var(--mono); font-size: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 6px 14px; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-item .k { font-size: 10.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .03em; }
+  .stat-item .v { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .r2-pill { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 12.5px; background: var(--accent-soft); color: var(--accent); padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .empty-note { color: var(--ink-faint); font-size: 12.5px; padding: 4px 0; }
+
+  /* ---- Modal ---- */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(10,20,17,.45); display: flex; align-items: center;
+    justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); max-width: 560px; width: 100%;
+    max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .modal-head h3 { font-size: 15px; }
+  .modal-body { padding: 14px 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .modal-foot { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  textarea.csv-area { width: 100%; min-height: 140px; font-family: var(--mono); font-size: 12.5px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface-2); resize: vertical; }
+  .modal img.export-preview { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+  .note-box { background: var(--primary-soft); color: var(--primary-soft-ink); border-radius: 8px; padding: 9px 11px; font-size: 12.5px; }
+  .form-row { display: flex; flex-direction: column; gap: 4px; }
+  .form-row label { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+  .form-row input, .form-row select { border: 1px solid var(--border); background: var(--surface-2); border-radius: 7px; padding: 7px 9px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .error-text { color: var(--danger); font-size: 12px; }
+
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 9px 16px; border-radius: 999px; font-size: 13px; z-index: 200; box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  details.intro { margin: 14px 14px 0; }
+  details.intro summary {
+    cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; font-weight: 600; font-size: 13px;
+    box-shadow: var(--shadow);
+  }
+  details.intro summary::-webkit-details-marker { display: none; }
+  details.intro summary .chevron { transition: transform .15s; margin-left: auto; color: var(--ink-faint); }
+  details.intro[open] summary .chevron { transform: rotate(90deg); }
+  .intro-body {
+    background: var(--surface-2); border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px;
+    margin-top: -1px; padding: 12px 16px; font-size: 12.5px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px;
+  }
+  .intro-body strong { color: var(--ink); }
+
+  footer.app-foot { text-align: center; font-size: 11.5px; color: var(--ink-faint); padding: 18px 14px 26px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 17L9 9L13 13L21 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21H21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="brand-name">Curvewright</span>
+      </div>
+      <div class="divider-v"></div>
+      <div class="toolbar-group">
+        <button class="btn" id="btnAddRow" title="Add a row to the data table">+ Row</button>
+        <button class="btn" id="btnAddCol" title="Add a manual data column">+ Column</button>
+        <button class="btn" id="btnAddCalcCol" title="Add a calculated, derivative, or integral column">+ Calculated</button>
+      </div>
+      <div class="divider-v"></div>
+      <div class="toolbar-group">
+        <button class="btn" id="btnImport">Import CSV</button>
+        <button class="btn" id="btnExport">Export CSV</button>
+      </div>
+      <div class="divider-v"></div>
+      <div class="toolbar-group">
+        <button class="btn primary" id="btnAddGraph">+ Graph</button>
+      </div>
+      <div class="toolbar-group" style="margin-left:auto;">
+        <select class="btn" id="sampleSelect" style="padding-right:6px;">
+          <option value="">Load sample data…</option>
+          <option value="projectile">Projectile motion (quadratic)</option>
+          <option value="oscillation">Oscillating signal (FFT demo)</option>
+        </select>
+        <button class="btn ghost danger" id="btnClearAll" title="Clear all data and graphs">Clear all</button>
+      </div>
+    </div>
+  </header>
+
+  <details class="intro">
+    <summary>How to use Curvewright <span class="chevron">▸</span></summary>
+    <div class="intro-body">
+      <div><strong>Enter or paste data</strong> into the table on the left. Column names in formulas use the short name shown under each header (e.g. <code>t</code>, <code>x</code>).</div>
+      <div><strong>Calculated columns</strong> can use a formula (<code>v = dx/dt</code> style expressions, e.g. <code>x^2 + 3*sin(t)</code>), or be a numeric derivative or integral of two existing columns.</div>
+      <div><strong>Graphs</strong> pick X and one or more Y columns. Use the region boxes (or the "Pick start/end" buttons, tap a point on the chart) to restrict statistics and curve fits to part of the data.</div>
+      <div><strong>FFT</strong> — switch a graph's view to "Spectrum (FFT)" to see the frequency content of a Y column against evenly-spaced X data. Use "Send peak to fit" to seed a Sinusoidal fit with the dominant frequency.</div>
+      <div><strong>Saving your work</strong> — your table and graphs autosave in this browser. To keep data permanently, use Export CSV (copies to clipboard) or "Save as image" on a graph (press-and-hold the image to save it to Photos on iPad).</div>
+    </div>
+  </details>
+
+  <main class="workspace">
+    <section class="panel" id="tablePanel">
+      <div class="panel-head">
+        <h2>Data table</h2>
+        <span class="empty-note" id="rowCountLabel"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="datatable" id="dataTable"></table>
+      </div>
+      <div class="table-footer">
+        <button class="btn small" id="btnAddRowFooter">+ Row</button>
+        <button class="btn small ghost" id="btnDeleteLastRow">Delete last row</button>
+      </div>
+    </section>
+
+    <section class="graphs-col" id="graphsCol"></section>
+  </main>
+
+  <footer class="app-foot">Curvewright runs entirely in this browser tab — nothing you enter is sent anywhere. Built for data analysis without a sensor connection.</footer>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* =========================================================================
+   MATH CORE  (linear algebra, curve fits, FFT, stats, calculus, formulas)
+   ========================================================================= */
+
+function solveLinearSystem(A, b) {
+  const n = A.length;
+  const M = A.map((row, i) => row.slice().concat([b[i]]));
+  for (let col = 0; col < n; col++) {
+    let pivot = col, maxAbs = Math.abs(M[col][col]);
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > maxAbs) { maxAbs = Math.abs(M[r][col]); pivot = r; }
+    if (maxAbs < 1e-12) return null;
+    if (pivot !== col) { const tmp = M[col]; M[col] = M[pivot]; M[pivot] = tmp; }
+    const pv = M[col][col];
+    for (let c = col; c <= n; c++) M[col][c] /= pv;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = M[r][col];
+      if (f === 0) continue;
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+    }
+  }
+  return M.map(row => row[n]);
+}
+
+function linearBasisFit(xs, ys, basisFns) {
+  const n = xs.length, k = basisFns.length;
+  const Phi = xs.map(x => basisFns.map(f => f(x)));
+  const AtA = Array.from({ length: k }, () => new Array(k).fill(0));
+  const Atb = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) {
+    for (let a = 0; a < k; a++) {
+      Atb[a] += Phi[i][a] * ys[i];
+      for (let b = 0; b < k; b++) AtA[a][b] += Phi[i][a] * Phi[i][b];
+    }
+  }
+  const coeffs = solveLinearSystem(AtA, Atb);
+  if (!coeffs) return null;
+  const predict = (x) => basisFns.reduce((s, f, idx) => s + coeffs[idx] * f(x), 0);
+  return { coeffs, predict, r2: computeR2(xs, ys, predict) };
+}
+
+function computeR2(xs, ys, predict) {
+  const n = ys.length;
+  const mean = ys.reduce((a, b) => a + b, 0) / n;
+  let ssTot = 0, ssRes = 0;
+  for (let i = 0; i < n; i++) { ssTot += (ys[i] - mean) ** 2; ssRes += (ys[i] - predict(xs[i])) ** 2; }
+  return ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+}
+
+function polynomialFit(xs, ys, degree) {
+  const basis = [];
+  for (let p = 0; p <= degree; p++) basis.push((x) => Math.pow(x, p));
+  const res = linearBasisFit(xs, ys, basis);
+  return res ? { ...res, degree } : null;
+}
+function exponentialFit(xs, ys) {
+  const pairs = xs.map((x, i) => [x, ys[i]]).filter(([, y]) => y > 0);
+  if (pairs.length < 2) return null;
+  const lin = linearBasisFit(pairs.map(p => p[0]), pairs.map(p => Math.log(p[1])), [() => 1, x => x]);
+  if (!lin) return null;
+  const A = Math.exp(lin.coeffs[0]), B = lin.coeffs[1];
+  const predict = x => A * Math.exp(B * x);
+  return { A, B, predict, r2: computeR2(xs, ys, predict) };
+}
+function powerFit(xs, ys) {
+  const pairs = xs.map((x, i) => [x, ys[i]]).filter(([x, y]) => x > 0 && y > 0);
+  if (pairs.length < 2) return null;
+  const lin = linearBasisFit(pairs.map(p => Math.log(p[0])), pairs.map(p => Math.log(p[1])), [() => 1, x => x]);
+  if (!lin) return null;
+  const A = Math.exp(lin.coeffs[0]), B = lin.coeffs[1];
+  const predict = x => A * Math.pow(x, B);
+  return { A, B, predict, r2: computeR2(xs, ys, predict) };
+}
+function logFit(xs, ys) {
+  const pairs = xs.map((x, i) => [x, ys[i]]).filter(([x]) => x > 0);
+  if (pairs.length < 2) return null;
+  const lin = linearBasisFit(pairs.map(p => Math.log(p[0])), pairs.map(p => p[1]), [() => 1, x => x]);
+  if (!lin) return null;
+  const B = lin.coeffs[0], A = lin.coeffs[1];
+  const predict = x => A * Math.log(x) + B;
+  return { A, B, predict, r2: computeR2(xs, ys, predict) };
+}
+function reciprocalFit(xs, ys) {
+  const pairs = xs.map((x, i) => [x, ys[i]]).filter(([x]) => x !== 0);
+  if (pairs.length < 2) return null;
+  const lin = linearBasisFit(pairs.map(p => 1 / p[0]), pairs.map(p => p[1]), [() => 1, x => x]);
+  if (!lin) return null;
+  const B = lin.coeffs[0], A = lin.coeffs[1];
+  const predict = x => A / x + B;
+  return { A, B, predict, r2: computeR2(xs, ys, predict) };
+}
+function sinusoidalFit(xs, ys, initialGuess) {
+  const n = xs.length;
+  const yMean = ys.reduce((a, b) => a + b, 0) / n;
+  const yMax = Math.max(...ys), yMin = Math.min(...ys);
+  let params = initialGuess ? initialGuess.slice() : [
+    (yMax - yMin) / 2 || 1, (2 * Math.PI) / ((Math.max(...xs) - Math.min(...xs)) || 1), 0, yMean,
+  ];
+  if (!isFinite(params[1]) || params[1] === 0) params[1] = 1;
+  const model = (p, x) => p[0] * Math.sin(p[1] * x + p[2]) + p[3];
+  const residuals = (p) => xs.map((x, i) => model(p, x) - ys[i]);
+  function jacobian(p) {
+    const eps = 1e-6, base = residuals(p), J = [];
+    for (let j = 0; j < p.length; j++) {
+      const pStep = p.slice(); const h = Math.max(Math.abs(p[j]) * eps, eps);
+      pStep[j] += h; const stepped = residuals(pStep);
+      J.push(stepped.map((v, i) => (v - base[i]) / h));
+    }
+    const Jt = [];
+    for (let i = 0; i < n; i++) Jt.push(J.map(col => col[i]));
+    return { Jt, base };
+  }
+  let lambda = 1e-3;
+  let bestSSE = residuals(params).reduce((s, r) => s + r * r, 0);
+  for (let iter = 0; iter < 200; iter++) {
+    const { Jt, base } = jacobian(params);
+    const k = params.length;
+    const JtJ = Array.from({ length: k }, () => new Array(k).fill(0));
+    const Jtr = new Array(k).fill(0);
+    for (let i = 0; i < n; i++) {
+      for (let a = 0; a < k; a++) { Jtr[a] += Jt[i][a] * base[i]; for (let b = 0; b < k; b++) JtJ[a][b] += Jt[i][a] * Jt[i][b]; }
+    }
+    for (let a = 0; a < k; a++) JtJ[a][a] *= (1 + lambda);
+    const delta = solveLinearSystem(JtJ, Jtr.map(v => -v));
+    if (!delta) break;
+    const trial = params.map((p, i) => p + delta[i]);
+    const trialSSE = residuals(trial).reduce((s, r) => s + r * r, 0);
+    if (trialSSE < bestSSE) {
+      const improved = Math.abs(trialSSE - bestSSE) < 1e-14;
+      params = trial; bestSSE = trialSSE; lambda = Math.max(lambda / 3, 1e-8);
+      if (improved) break;
+    } else { lambda *= 3; if (lambda > 1e8) break; }
+  }
+  let [A, B, C, D] = params;
+  if (A < 0) { A = -A; C += Math.PI; }
+  if (B < 0) { B = -B; C = -C; }
+  C = Math.atan2(Math.sin(C), Math.cos(C));
+  const predict = x => A * Math.sin(B * x + C) + D;
+  return { A, B, C, D, predict, r2: computeR2(xs, ys, predict) };
+}
+
+function describeStats(values) {
+  const n = values.length;
+  if (n === 0) return null;
+  const min = Math.min(...values), max = Math.max(...values);
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = n > 1 ? values.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1) : 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const mid = Math.floor(n / 2);
+  const median = n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return { n, min, max, mean, stdev: Math.sqrt(variance), median, range: max - min };
+}
+
+function derivative(xs, ys) {
+  const n = xs.length, out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    if (n === 1) out[i] = 0;
+    else if (i === 0) out[i] = (ys[1] - ys[0]) / (xs[1] - xs[0]);
+    else if (i === n - 1) out[i] = (ys[n - 1] - ys[n - 2]) / (xs[n - 1] - xs[n - 2]);
+    else out[i] = (ys[i + 1] - ys[i - 1]) / (xs[i + 1] - xs[i - 1]);
+  }
+  return out;
+}
+function trapezoidIntegral(xs, ys) {
+  let total = 0; const cumulative = [0];
+  for (let i = 1; i < xs.length; i++) { total += (xs[i] - xs[i - 1]) * (ys[i] + ys[i - 1]) / 2; cumulative.push(total); }
+  return { total, cumulative };
+}
+
+function fftInPlace(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = (-2 * Math.PI) / len, wRe = Math.cos(ang), wIm = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const uRe = re[i + k], uIm = im[i + k];
+        const vRe = re[i + k + len / 2] * curRe - im[i + k + len / 2] * curIm;
+        const vIm = re[i + k + len / 2] * curIm + im[i + k + len / 2] * curRe;
+        re[i + k] = uRe + vRe; im[i + k] = uIm + vIm;
+        re[i + k + len / 2] = uRe - vRe; im[i + k + len / 2] = uIm - vIm;
+        const nr = curRe * wRe - curIm * wIm, ni = curRe * wIm + curIm * wRe;
+        curRe = nr; curIm = ni;
+      }
+    }
+  }
+}
+function nextPow2(n) { let p = 1; while (p < n) p <<= 1; return p; }
+function computeFFT(ys, dt, options) {
+  options = options || {};
+  const N0 = ys.length;
+  let windowed = ys.slice();
+  if (options.window === 'hann' && N0 > 1) windowed = windowed.map((v, i) => v * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N0 - 1))));
+  const N = options.zeroPadTo || nextPow2(N0);
+  const re = new Array(N).fill(0), im = new Array(N).fill(0);
+  for (let i = 0; i < N0; i++) re[i] = windowed[i];
+  fftInPlace(re, im);
+  const half = N / 2, freqs = new Array(half), mags = new Array(half);
+  for (let k = 0; k < half; k++) {
+    freqs[k] = k / (N * dt);
+    const raw = Math.hypot(re[k], im[k]) / N0;
+    mags[k] = k === 0 ? raw : raw * 2;
+  }
+  return { freqs, mags, fftSize: N };
+}
+function dominantFrequency(freqs, mags) {
+  let bestIdx = 1;
+  for (let i = 2; i < mags.length; i++) if (mags[i] > mags[bestIdx]) bestIdx = i;
+  return freqs[bestIdx];
+}
+
+const FORMULA_SCOPE = ['abs', 'sqrt', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'log', 'log10', 'log2', 'exp', 'pow', 'min', 'max', 'round', 'floor', 'ceil', 'sign', 'PI', 'E'];
+function compileFormula(expr, columnNames) {
+  const jsExpr = expr.replace(/\*\*/g, '§§POW§§').replace(/\^/g, '**').replace(/§§POW§§/g, '**');
+  const scopePreamble = FORMULA_SCOPE.map(name =>
+    name === 'PI' ? 'var PI = Math.PI;' : name === 'E' ? 'var E = Math.E;' : `var ${name} = Math.${name};`
+  ).join(' ');
+  const paramNames = columnNames.concat(['i', 'n']);
+  const fn = new Function(...paramNames, `${scopePreamble} return (${jsExpr});`);
+  return (row, i, n) => fn(...paramNames.map(p => (p === 'i' ? i : p === 'n' ? n : row[p])));
+}
+
+/* =========================================================================
+   APP STATE
+   ========================================================================= */
+
+const PALETTE = ['s1', 's2', 's3', 's4', 's5', 's6'];
+let colorCounter = 0;
+function nextColorVar() { const v = PALETTE[colorCounter % PALETTE.length]; colorCounter++; return v; }
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim(); }
+
+let uidCounter = 1;
+function uid(prefix) { return prefix + '_' + (uidCounter++); }
+
+const RESERVED_NAMES = FORMULA_SCOPE.concat(['i', 'n']);
+function slugify(label, existingNames) {
+  let base = (label || 'col').trim().toLowerCase()
+    .replace(/[^\w\s]/g, '').trim().split(/\s+/)
+    .map((w, i) => i === 0 ? w : (w.charAt(0).toUpperCase() + w.slice(1)))
+    .join('') || 'col';
+  if (/^[0-9]/.test(base)) base = 'c' + base;
+  if (RESERVED_NAMES.includes(base)) base = base + 'Col';
+  let name = base, n = 2;
+  while (existingNames.includes(name)) { name = base + n; n++; }
+  return name;
+}
+
+const state = {
+  columns: [],
+  rowCount: 0,
+  graphs: [],
+};
+
+function getCol(id) { return state.columns.find(c => c.id === id); }
+function dataColumns() { return state.columns.filter(c => true); }
+
+function addColumn({ label, unit, kind, formula, srcX, srcY, values, colorVar }) {
+  const existingNames = state.columns.map(c => c.name);
+  const col = {
+    id: uid('col'), name: slugify(label, existingNames), label: label || 'Column', unit: unit || '',
+    kind: kind || 'data', formula: formula || '', srcX: srcX || null, srcY: srcY || null,
+    values: values ? values.slice() : new Array(state.rowCount).fill(null),
+    colorVar: colorVar || nextColorVar(),
+  };
+  while (col.values.length < state.rowCount) col.values.push(null);
+  state.columns.push(col);
+  return col;
+}
+
+function ensureRowCount(n) {
+  if (n > state.rowCount) {
+    state.columns.forEach(c => { while (c.values.length < n) c.values.push(null); });
+    state.rowCount = n;
+  }
+}
+
+function recomputeDerived() {
+  for (let pass = 0; pass < 2; pass++) {
+    for (const col of state.columns) {
+      if (col.kind === 'formula') {
+        if (!col.formula) continue;
+        const refCols = state.columns.filter(c => c.id !== col.id);
+        let fn;
+        try { fn = compileFormula(col.formula, refCols.map(c => c.name)); col.formulaError = ''; }
+        catch (e) { col.formulaError = 'Formula error: ' + e.message; continue; }
+        const vals = new Array(state.rowCount).fill(null);
+        for (let i = 0; i < state.rowCount; i++) {
+          const row = {};
+          let hasNull = false;
+          refCols.forEach(c => {
+            const v = c.values[i];
+            row[c.name] = (v === null || v === undefined || v === '') ? NaN : Number(v);
+            if (row[c.name] !== row[c.name]) hasNull = true; // NaN check
+          });
+          try {
+            const out = fn(row, i, state.rowCount);
+            vals[i] = (typeof out === 'number' && isFinite(out)) ? out : null;
+          } catch (e) { vals[i] = null; col.formulaError = 'Formula error: ' + e.message; }
+        }
+        col.values = vals;
+      } else if (col.kind === 'derivative' || col.kind === 'integral') {
+        const cx = getCol(col.srcX), cy = getCol(col.srcY);
+        const vals = new Array(state.rowCount).fill(null);
+        if (cx && cy) {
+          const idxs = [], xs = [], ys = [];
+          for (let i = 0; i < state.rowCount; i++) {
+            const xv = cx.values[i], yv = cy.values[i];
+            if (xv !== null && xv !== '' && yv !== null && yv !== '' && isFinite(Number(xv)) && isFinite(Number(yv))) {
+              idxs.push(i); xs.push(Number(xv)); ys.push(Number(yv));
+            }
+          }
+          if (xs.length >= 2) {
+            if (col.kind === 'derivative') {
+              const d = derivative(xs, ys);
+              idxs.forEach((rowIdx, k) => { vals[rowIdx] = d[k]; });
+            } else {
+              const { cumulative, total } = trapezoidIntegral(xs, ys);
+              idxs.forEach((rowIdx, k) => { vals[rowIdx] = cumulative[k]; });
+              col.integralTotal = total;
+            }
+          }
+        }
+        col.values = vals;
+      }
+    }
+  }
+}
+
+/* =========================================================================
+   PERSISTENCE (localStorage autosave — per-browser convenience only)
+   ========================================================================= */
+
+const STORAGE_KEY = 'curvewright.session.v1';
+let saveTimer = null;
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 400); }
+function saveState() {
+  try {
+    const payload = {
+      columns: state.columns.map(c => ({ id: c.id, name: c.name, label: c.label, unit: c.unit, kind: c.kind, formula: c.formula, srcX: c.srcX, srcY: c.srcY, values: c.values, colorVar: c.colorVar })),
+      rowCount: state.rowCount,
+      graphs: state.graphs.map(g => ({ id: g.id, xColId: g.xColId, yColIds: g.yColIds, viewMode: g.viewMode, fftWindow: g.fftWindow, fitType: g.fitType, xMin: g.xMin, xMax: g.xMax, showStats: g.showStats, connectPoints: g.connectPoints, sinSeedFreq: g.sinSeedFreq })),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage may be unavailable — ignore */ }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const payload = JSON.parse(raw);
+    if (!payload || !Array.isArray(payload.columns)) return false;
+    state.columns = payload.columns;
+    state.rowCount = payload.rowCount || 0;
+    state.graphs = (payload.graphs || []).map(g => ({ ...g, chart: null }));
+    colorCounter = state.columns.length;
+    uidCounter = 1000;
+    return true;
+  } catch (e) { return false; }
+}
+
+/* =========================================================================
+   CSV IMPORT / EXPORT
+   ========================================================================= */
+
+function parseCSV(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').filter(l => l.trim().length > 0);
+  if (lines.length === 0) return null;
+  const splitLine = (line) => {
+    const out = []; let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false; }
+        else cur += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',' || ch === '\t') { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  };
+  const header = splitLine(lines[0]);
+  const rows = lines.slice(1).map(splitLine);
+  const cols = header.map((h) => {
+    const m = h.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    return m ? { label: m[1].trim(), unit: m[2].trim() } : { label: h.trim(), unit: '' };
+  });
+  return { cols, rows };
+}
+
+function buildCSV() {
+  const cols = state.columns;
+  const header = cols.map(c => c.unit ? `${c.label} (${c.unit})` : c.label).join(',');
+  const lines = [header];
+  for (let i = 0; i < state.rowCount; i++) {
+    lines.push(cols.map(c => (c.values[i] === null || c.values[i] === undefined) ? '' : String(c.values[i])).join(','));
+  }
+  return lines.join('\n');
+}
+
+/* =========================================================================
+   RENDERING — DATA TABLE
+   ========================================================================= */
+
+const elTable = document.getElementById('dataTable');
+const elRowCountLabel = document.getElementById('rowCountLabel');
+
+function renderTable() {
+  const cols = state.columns;
+  elRowCountLabel.textContent = state.rowCount + ' row' + (state.rowCount === 1 ? '' : 's') + ' · ' + cols.length + ' column' + (cols.length === 1 ? '' : 's');
+  let html = '<thead><tr><th class="rowhead-col">#</th>';
+  cols.forEach(c => {
+    html += `<th data-col="${c.id}">
+      <div class="col-head-label"><span class="swatch" style="background:var(--${c.colorVar})"></span>${escapeHtml(c.label)}</div>
+      <div class="col-head-unit">${c.unit ? escapeHtml(c.unit) + ' · ' : ''}name: <code>${escapeHtml(c.name)}</code></div>
+      ${c.kind === 'formula' ? `<div class="col-head-formula" title="${escapeHtml(c.formulaError || '')}">${c.formulaError ? '⚠️ ' : 'f(x): '}${escapeHtml(c.formula)}</div>` : ''}
+      ${c.kind === 'derivative' ? `<div class="col-head-formula">d(${escapeHtml(getCol(c.srcY)?.name||'?')})/d(${escapeHtml(getCol(c.srcX)?.name||'?')})</div>` : ''}
+      ${c.kind === 'integral' ? `<div class="col-head-formula">∫ ${escapeHtml(getCol(c.srcY)?.name||'?')} d${escapeHtml(getCol(c.srcX)?.name||'?')}</div>` : ''}
+      <div class="col-head-actions">
+        <button class="icon-btn" data-action="rename-col" data-col="${c.id}" title="Rename / edit column">${iconEdit()}</button>
+        <button class="icon-btn" data-action="delete-col" data-col="${c.id}" title="Delete column">${iconTrash()}</button>
+      </div>
+    </th>`;
+  });
+  html += '</tr></thead><tbody>';
+  for (let i = 0; i <= state.rowCount; i++) {
+    const isGhost = i === state.rowCount;
+    html += `<tr class="${isGhost ? 'ghost-row' : ''}"><th>${isGhost ? '+' : i + 1}</th>`;
+    cols.forEach(c => {
+      const derived = c.kind !== 'data';
+      const v = isGhost ? null : c.values[i];
+      const display = (v === null || v === undefined) ? '' : (typeof v === 'number' ? trimNum(v) : v);
+      html += `<td class="${derived ? 'derived' : ''}"><input type="text" inputmode="decimal" data-col="${c.id}" data-row="${i}" value="${display}" ${derived ? 'readonly tabindex="-1"' : ''}></td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  elTable.innerHTML = html;
+}
+
+function trimNum(v) {
+  if (!isFinite(v)) return '';
+  const r = Math.round(v * 1e6) / 1e6;
+  return String(r);
+}
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+function iconEdit() { return '<svg viewBox="0 0 24 24" fill="none"><path d="M4 20l4.5-1 10-10-3.5-3.5-10 10L4 20z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'; }
+function iconTrash() { return '<svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 12a1 1 0 001 1h6a1 1 0 001-1l1-12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
+function iconClose() { return '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'; }
+
+elTable.addEventListener('change', (e) => {
+  const input = e.target.closest('input[data-col]');
+  if (!input || input.readOnly) return;
+  const col = getCol(input.dataset.col);
+  const row = Number(input.dataset.row);
+  const raw = input.value.trim();
+  if (raw === '' && row === state.rowCount) return; // ghost row left empty — nothing to do
+  if (row === state.rowCount) ensureRowCount(row + 1);
+  let val = raw === '' ? null : Number(raw);
+  if (raw !== '' && isNaN(val)) val = null;
+  col.values[row] = val;
+  afterDataChange();
+});
+elTable.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const input = e.target.closest('input[data-col]');
+  if (!input || input.readOnly) return;
+  e.preventDefault();
+  input.blur();
+  const row = Number(input.dataset.row);
+  const colId = input.dataset.col;
+  requestAnimationFrame(() => {
+    const next = elTable.querySelector(`input[data-col="${colId}"][data-row="${row + 1}"]`);
+    if (next) { next.focus(); if (next.select) next.select(); }
+  });
+});
+elTable.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const colId = btn.dataset.col;
+  if (btn.dataset.action === 'delete-col') {
+    if (state.columns.length <= 1) { showToast("Can't delete the last column"); return; }
+    state.columns = state.columns.filter(c => c.id !== colId);
+    afterDataChange();
+  } else if (btn.dataset.action === 'rename-col') {
+    openColumnEditor(colId);
+  }
+});
+
+function afterDataChange() {
+  recomputeDerived();
+  renderTable();
+  state.graphs.forEach(renderGraphChart);
+  scheduleSave();
+}
+
+document.getElementById('btnAddRow').addEventListener('click', () => { ensureRowCount(state.rowCount + 1); afterDataChange(); });
+document.getElementById('btnAddRowFooter').addEventListener('click', () => { ensureRowCount(state.rowCount + 1); afterDataChange(); });
+document.getElementById('btnDeleteLastRow').addEventListener('click', () => {
+  if (state.rowCount === 0) return;
+  state.rowCount -= 1;
+  state.columns.forEach(c => c.values.length = state.rowCount);
+  afterDataChange();
+});
+document.getElementById('btnAddCol').addEventListener('click', () => {
+  const label = 'Column ' + (state.columns.length + 1);
+  addColumn({ label, unit: '', kind: 'data' });
+  ensureRowCount(Math.max(state.rowCount, 3));
+  afterDataChange();
+});
+document.getElementById('btnClearAll').addEventListener('click', () => {
+  if (!confirm('Clear all data and graphs? This cannot be undone.')) return;
+  state.columns = []; state.rowCount = 0; state.graphs.forEach(g => g.chart && g.chart.destroy()); state.graphs = [];
+  colorCounter = 0;
+  seedDefault();
+  afterDataChange();
+  renderGraphs();
+});
+
+/* =========================================================================
+   MODALS
+   ========================================================================= */
+
+const modalRoot = document.getElementById('modalRoot');
+function closeModal() { modalRoot.innerHTML = ''; }
+function openModal(html) { modalRoot.innerHTML = `<div class="modal-backdrop" id="modalBackdrop"><div class="modal">${html}</div></div>`;
+  document.getElementById('modalBackdrop').addEventListener('mousedown', (e) => { if (e.target.id === 'modalBackdrop') closeModal(); });
+}
+
+/* ---- File saving: prefer the platform downloads capability, fall back to a classic blob link ---- */
+let downloadsNS = null;
+(async () => {
+  try {
+    if (window.claude && typeof window.claude.use === 'function') downloadsNS = await window.claude.use('downloads');
+  } catch (e) { downloadsNS = null; }
+})();
+
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mimeMatch = header.match(/data:([^;]+);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+async function offerDownload(filename, data) {
+  if (downloadsNS) {
+    try {
+      await downloadsNS.save({ filename, data });
+      showToast('Saved ' + filename);
+      return;
+    } catch (e) {
+      if (e && e.code === 'declined') { showToast('Save cancelled'); return; }
+      if (e && e.code === 'rate_limited') { showToast('A save prompt is already open'); return; }
+      // otherwise fall through and try the classic download path
+    }
+  }
+  try {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (e2) {
+    showToast('Download not available here — use Copy or long-press the image instead');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---- Column editor (rename data col / edit calculated col) ---- */
+function openColumnEditor(colId) {
+  const col = getCol(colId);
+  const isCalc = col.kind !== 'data';
+  openModal(`
+    <div class="modal-head"><h3>Edit column</h3><button class="icon-btn" id="mClose">${iconClose()}</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label>Label</label><input type="text" id="mLabel" value="${escapeHtml(col.label)}"></div>
+        <div class="form-row"><label>Unit</label><input type="text" id="mUnit" value="${escapeHtml(col.unit)}"></div>
+      </div>
+      <div class="form-row"><label>Short name (used in formulas)</label><input type="text" id="mName" value="${escapeHtml(col.name)}"></div>
+      ${col.kind === 'formula' ? `<div class="form-row"><label>Formula (use ^ for power, e.g. <code>x^2 + 2*sin(t)</code>)</label><input type="text" id="mFormula" value="${escapeHtml(col.formula)}"></div>` : ''}
+      ${col.kind !== 'data' ? `<div class="note-box">This is a ${col.kind} column — its values are computed automatically.</div>` : ''}
+      <div id="mErr" class="error-text"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="mCancel">Cancel</button>
+      <button class="btn primary" id="mSave">Save</button>
+    </div>
+  `);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = () => {
+    const label = document.getElementById('mLabel').value.trim() || col.label;
+    const unit = document.getElementById('mUnit').value.trim();
+    let name = document.getElementById('mName').value.trim();
+    const others = state.columns.filter(c => c.id !== col.id).map(c => c.name);
+    if (!name || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) { document.getElementById('mErr').textContent = 'Short name must be a valid identifier (letters, numbers, underscore; not starting with a number).'; return; }
+    if (others.includes(name)) { document.getElementById('mErr').textContent = 'That short name is already used by another column.'; return; }
+    if (RESERVED_NAMES.includes(name)) { document.getElementById('mErr').textContent = 'That short name is reserved for formulas (e.g. a math function). Please choose another.'; return; }
+    col.label = label; col.unit = unit; col.name = name;
+    if (col.kind === 'formula') col.formula = document.getElementById('mFormula').value.trim();
+    closeModal();
+    afterDataChange();
+  };
+}
+
+/* ---- Add calculated column ---- */
+document.getElementById('btnAddCalcCol').addEventListener('click', () => {
+  if (state.columns.length === 0) { showToast('Add a data column first'); return; }
+  openModal(`
+    <div class="modal-head"><h3>Add calculated column</h3><button class="icon-btn" id="mClose">${iconClose()}</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>Type</label>
+        <select id="cType">
+          <option value="formula">Formula</option>
+          <option value="derivative">Derivative (d Y / d X)</option>
+          <option value="integral">Integral (∫ Y dX)</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Label</label><input type="text" id="cLabel" value="New Column"></div>
+        <div class="form-row"><label>Unit</label><input type="text" id="cUnit" value=""></div>
+      </div>
+      <div id="cFormulaRow" class="form-row">
+        <label>Formula — reference other columns by short name, e.g. <code>x^2 + 2*sin(t)</code></label>
+        <input type="text" id="cFormula" placeholder="e.g. t^2 * 0.5">
+      </div>
+      <div id="cXYRow" class="form-grid" style="display:none;">
+        <div class="form-row"><label>X column</label><select id="cX"></select></div>
+        <div class="form-row"><label>Y column</label><select id="cY"></select></div>
+      </div>
+      <div id="mErr" class="error-text"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn primary" id="mSave">Add column</button></div>
+  `);
+  const selX = document.getElementById('cX'), selY = document.getElementById('cY');
+  state.columns.forEach(c => {
+    selX.insertAdjacentHTML('beforeend', `<option value="${c.id}">${escapeHtml(c.label)} (${c.name})</option>`);
+    selY.insertAdjacentHTML('beforeend', `<option value="${c.id}">${escapeHtml(c.label)} (${c.name})</option>`);
+  });
+  if (state.columns.length > 1) selY.selectedIndex = 1;
+  document.getElementById('cType').addEventListener('change', (e) => {
+    const isFormula = e.target.value === 'formula';
+    document.getElementById('cFormulaRow').style.display = isFormula ? '' : 'none';
+    document.getElementById('cXYRow').style.display = isFormula ? 'none' : '';
+    document.getElementById('cLabel').value = isFormula ? 'New Column' : (e.target.value === 'derivative' ? 'Rate of change' : 'Accumulated area');
+  });
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = () => {
+    const type = document.getElementById('cType').value;
+    const label = document.getElementById('cLabel').value.trim() || 'New Column';
+    const unit = document.getElementById('cUnit').value.trim();
+    if (type === 'formula') {
+      const formula = document.getElementById('cFormula').value.trim();
+      if (!formula) { document.getElementById('mErr').textContent = 'Enter a formula.'; return; }
+      addColumn({ label, unit, kind: 'formula', formula });
+    } else {
+      const srcX = selX.value, srcY = selY.value;
+      addColumn({ label, unit, kind: type, srcX, srcY });
+    }
+    closeModal();
+    afterDataChange();
+  };
+});
+
+/* ---- Import CSV ---- */
+document.getElementById('btnImport').addEventListener('click', () => {
+  openModal(`
+    <div class="modal-head"><h3>Import data</h3><button class="icon-btn" id="mClose">${iconClose()}</button></div>
+    <div class="modal-body">
+      <div class="note-box">Paste CSV below (header row like <code>Time (s), Position (m)</code>), or choose a file. Importing replaces the current table.</div>
+      <textarea class="csv-area" id="csvText" placeholder="Time (s),Position (m)&#10;0,0&#10;0.1,0.05"></textarea>
+      <div class="form-row"><label>…or choose a CSV file</label><input type="file" id="csvFile" accept=".csv,text/csv,text/plain"></div>
+      <div id="mErr" class="error-text"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancel</button><button class="btn primary" id="mSave">Import</button></div>
+  `);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('csvFile').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { document.getElementById('csvText').value = reader.result; };
+    reader.onerror = () => showToast('Could not read that file');
+    reader.readAsText(f);
+  });
+  document.getElementById('mSave').onclick = () => {
+    const text = document.getElementById('csvText').value;
+    if (!text.trim()) { document.getElementById('mErr').textContent = 'Paste some CSV text or choose a file first.'; return; }
+    const parsed = parseCSV(text);
+    if (!parsed) { document.getElementById('mErr').textContent = 'Could not parse that as CSV.'; return; }
+    state.columns = []; state.rowCount = 0; colorCounter = 0;
+    state.graphs.forEach(g => g.chart && g.chart.destroy()); state.graphs = [];
+    ensureRowCount(parsed.rows.length);
+    parsed.cols.forEach((c, ci) => {
+      const values = parsed.rows.map(r => {
+        const raw = (r[ci] || '').trim();
+        if (raw === '') return null;
+        const num = Number(raw);
+        return isNaN(num) ? null : num;
+      });
+      addColumn({ label: c.label, unit: c.unit, kind: 'data', values });
+    });
+    closeModal();
+    afterDataChange();
+    if (state.columns.length >= 2) addGraph(state.columns[0].id, [state.columns[1].id]);
+    renderGraphs();
+    showToast('Imported ' + parsed.rows.length + ' rows');
+  };
+});
+
+/* ---- Export CSV ---- */
+document.getElementById('btnExport').addEventListener('click', () => {
+  const csv = buildCSV();
+  openModal(`
+    <div class="modal-head"><h3>Export CSV</h3><button class="icon-btn" id="mClose">${iconClose()}</button></div>
+    <div class="modal-body">
+      <div class="note-box" id="copyNote">Tap "Copy to clipboard", then paste into Sheets, Excel, or a text file. On iPad you can also tap the box below, "Select All", then "Copy".</div>
+      <textarea class="csv-area" id="csvOut" readonly>${escapeHtml(csv)}</textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="mDownload">Try download</button>
+      <button class="btn primary" id="mCopy">Copy to clipboard</button>
+    </div>
+  `);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mCopy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(csv);
+      showToast('Copied CSV to clipboard');
+    } catch (e) {
+      const ta = document.getElementById('csvOut');
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); showToast('Copied CSV to clipboard'); }
+      catch (e2) { showToast('Copy blocked — select the text and copy manually'); }
+    }
+  };
+  document.getElementById('mDownload').onclick = () => offerDownload('curvewright-data.csv', new Blob([csv], { type: 'text/csv' }));
+});
+
+/* =========================================================================
+   GRAPHS
+   ========================================================================= */
+
+const FIT_LABELS = {
+  none: 'None', auto: 'Automatic', linear: 'Linear', quadratic: 'Quadratic', cubic: 'Cubic',
+  power: 'Power', exponential: 'Exponential', log: 'Natural log', reciprocal: 'Reciprocal', sinusoidal: 'Sinusoidal',
+};
+
+function addGraph(xColId, yColIds) {
+  const g = {
+    id: uid('g'), xColId: xColId || (state.columns[0] && state.columns[0].id) || null,
+    yColIds: yColIds || (state.columns[1] ? [state.columns[1].id] : []),
+    viewMode: 'data', fftWindow: 'hann', fitType: 'none', xMin: null, xMax: null,
+    showStats: true, connectPoints: true, sinSeedFreq: null, chart: null,
+  };
+  state.graphs.push(g);
+  return g;
+}
+
+document.getElementById('btnAddGraph').addEventListener('click', () => {
+  if (state.columns.length === 0) { showToast('Add some data first'); return; }
+  addGraph();
+  renderGraphs();
+  scheduleSave();
+});
+
+const elGraphsCol = document.getElementById('graphsCol');
+
+// Chart.js plugin: shaded region band for the analysis range
+const regionBandPlugin = {
+  id: 'regionBand',
+  beforeDatasetsDraw(chart, args, opts) {
+    if (opts.xMin == null && opts.xMax == null) return;
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea || !scales.x) return;
+    const xScale = scales.x;
+    const xMin = opts.xMin != null ? opts.xMin : xScale.min;
+    const xMax = opts.xMax != null ? opts.xMax : xScale.max;
+    const left = Math.max(chartArea.left, xScale.getPixelForValue(xMin));
+    const right = Math.min(chartArea.right, xScale.getPixelForValue(xMax));
+    if (right <= left) return;
+    ctx.save();
+    ctx.fillStyle = opts.color || 'rgba(201,106,42,0.12)';
+    ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+    ctx.restore();
+  }
+};
+if (window.Chart) Chart.register(regionBandPlugin);
+
+function seriesRGBA(colorVar, alpha) {
+  const hex = cssVar(colorVar);
+  const m = hex.replace('#', '');
+  const r = parseInt(m.substring(0, 2), 16), gg = parseInt(m.substring(2, 4), 16), b = parseInt(m.substring(4, 6), 16);
+  return `rgba(${r},${gg},${b},${alpha})`;
+}
+
+function pairData(xCol, yCol) {
+  const pts = [];
+  for (let i = 0; i < state.rowCount; i++) {
+    const x = xCol.values[i], y = yCol.values[i];
+    if (x !== null && x !== undefined && y !== null && y !== undefined && isFinite(x) && isFinite(y)) pts.push({ x: Number(x), y: Number(y), i });
+  }
+  pts.sort((a, b) => a.x - b.x);
+  return pts;
+}
+
+function regionFilter(pts, xMin, xMax) {
+  if (xMin == null && xMax == null) return pts;
+  return pts.filter(p => (xMin == null || p.x >= xMin) && (xMax == null || p.x <= xMax));
+}
+
+function fmtSig(n, sig) {
+  if (!isFinite(n)) return 'NaN';
+  if (n === 0) return '0';
+  sig = sig || 4;
+  const d = Math.ceil(Math.log10(Math.abs(n)));
+  const power = sig - d;
+  const magnitude = Math.pow(10, power);
+  const rounded = Math.round(n * magnitude) / magnitude;
+  if (Math.abs(rounded) !== 0 && (Math.abs(rounded) < 1e-4 || Math.abs(rounded) >= 1e6)) return rounded.toExponential(Math.max(sig - 1, 0));
+  return String(rounded);
+}
+
+function runFit(type, xs, ys, seedFreq) {
+  switch (type) {
+    case 'linear': { const f = polynomialFit(xs, ys, 1); return f && { ...f, label: `y = ${fmtSig(f.coeffs[1])}x + ${fmtSig(f.coeffs[0])}`, kind: 'linear' }; }
+    case 'quadratic': { const f = polynomialFit(xs, ys, 2); return f && { ...f, label: `y = ${fmtSig(f.coeffs[2])}x² + ${fmtSig(f.coeffs[1])}x + ${fmtSig(f.coeffs[0])}`, kind: 'quadratic' }; }
+    case 'cubic': { const f = polynomialFit(xs, ys, 3); return f && { ...f, label: `y = ${fmtSig(f.coeffs[3])}x³ + ${fmtSig(f.coeffs[2])}x² + ${fmtSig(f.coeffs[1])}x + ${fmtSig(f.coeffs[0])}`, kind: 'cubic' }; }
+    case 'power': { const f = powerFit(xs, ys); return f && { ...f, label: `y = ${fmtSig(f.A)}·x^${fmtSig(f.B)}`, kind: 'power' }; }
+    case 'exponential': { const f = exponentialFit(xs, ys); return f && { ...f, label: `y = ${fmtSig(f.A)}·e^(${fmtSig(f.B)}x)`, kind: 'exponential' }; }
+    case 'log': { const f = logFit(xs, ys); return f && { ...f, label: `y = ${fmtSig(f.A)}·ln(x) + ${fmtSig(f.B)}`, kind: 'log' }; }
+    case 'reciprocal': { const f = reciprocalFit(xs, ys); return f && { ...f, label: `y = ${fmtSig(f.A)}/x + ${fmtSig(f.B)}`, kind: 'reciprocal' }; }
+    case 'sinusoidal': {
+      let guess = null;
+      if (seedFreq) { const yMean = ys.reduce((a,b)=>a+b,0)/ys.length; guess = [(Math.max(...ys)-Math.min(...ys))/2, 2*Math.PI*seedFreq, 0, yMean]; }
+      const f = sinusoidalFit(xs, ys, guess);
+      return f && { ...f, label: `y = ${fmtSig(f.A)}·sin(${fmtSig(f.B)}x + ${fmtSig(f.C)}) + ${fmtSig(f.D)}`, kind: 'sinusoidal' };
+    }
+    default: return null;
+  }
+}
+
+function autoFit(xs, ys, seedFreq) {
+  const candidates = ['linear', 'quadratic', 'cubic', 'power', 'exponential', 'log', 'reciprocal'];
+  if (seedFreq) candidates.push('sinusoidal');
+  let best = null;
+  for (const type of candidates) {
+    try {
+      const f = runFit(type, xs, ys, seedFreq);
+      if (f && isFinite(f.r2) && (!best || f.r2 > best.r2)) best = f;
+    } catch (e) { /* skip candidates that fail on this data (e.g. non-positive domain) */ }
+  }
+  return best;
+}
+
+function renderGraphs() {
+  elGraphsCol.innerHTML = '';
+  if (state.graphs.length === 0) {
+    elGraphsCol.innerHTML = `<div class="panel"><div class="panel-body empty-note">No graphs yet — click "+ Graph" above to plot your data.</div></div>`;
+    return;
+  }
+  state.graphs.forEach(g => {
+    const card = document.createElement('section');
+    card.className = 'panel graph-card';
+    card.dataset.graph = g.id;
+    card.innerHTML = graphCardHTML(g);
+    elGraphsCol.appendChild(card);
+    wireGraphCard(g, card);
+    renderGraphChart(g);
+  });
+}
+
+function colOptions(selectedId, includeNone) {
+  let html = includeNone ? `<option value="">—</option>` : '';
+  state.columns.forEach(c => { html += `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.label)}${c.unit ? ' (' + escapeHtml(c.unit) + ')' : ''}</option>`; });
+  return html;
+}
+
+function graphCardHTML(g) {
+  const fitOptions = Object.keys(FIT_LABELS).map(k => `<option value="${k}" ${g.fitType === k ? 'selected' : ''}>${FIT_LABELS[k]}</option>`).join('');
+  return `
+    <div class="panel-head">
+      <h2>Graph</h2>
+      <div style="display:flex; gap:4px;">
+        <button class="icon-btn" data-act="save-image" title="Save graph as image">${iconImage()}</button>
+        <button class="icon-btn" data-act="remove-graph" title="Remove this graph">${iconClose()}</button>
+      </div>
+    </div>
+    <div class="graph-controls">
+      <div class="field"><label>X axis</label><select data-ctl="x">${colOptions(g.xColId)}</select></div>
+      <div class="field"><label>Y axis (tap to toggle)</label><div class="chip-select" data-ctl="ychips">${state.columns.map(c => `<span class="chip ${g.yColIds.includes(c.id) ? 'active' : ''}" data-col="${c.id}"><span class="swatch" style="background:var(--${c.colorVar})"></span>${escapeHtml(c.label)}</span>`).join('')}</div></div>
+      <div class="field"><label>View</label>
+        <div class="seg" data-ctl="viewseg">
+          <button data-v="data" class="${g.viewMode === 'data' ? 'active' : ''}">Data</button>
+          <button data-v="fft" class="${g.viewMode === 'fft' ? 'active' : ''}">Spectrum (FFT)</button>
+        </div>
+      </div>
+      <div class="field" data-show-if="data"><label><input type="checkbox" data-ctl="connect" ${g.connectPoints ? 'checked' : ''}> Connect points</label></div>
+      <div class="field" data-show-if="fft"><label>Window</label>
+        <select data-ctl="fftwindow"><option value="hann" ${g.fftWindow==='hann'?'selected':''}>Hann</option><option value="none" ${g.fftWindow==='none'?'selected':''}>None</option></select>
+      </div>
+      <div class="field" data-show-if="data"><label>Curve fit</label><select data-ctl="fit">${fitOptions}</select></div>
+    </div>
+    <div class="chart-wrap"><canvas></canvas></div>
+    <div class="region-controls" data-show-if="data">
+      <div class="field"><label>Region X min</label><input type="number" step="any" data-ctl="xmin" value="${g.xMin != null ? g.xMin : ''}" placeholder="full"></div>
+      <div class="field"><label>Region X max</label><input type="number" step="any" data-ctl="xmax" value="${g.xMax != null ? g.xMax : ''}" placeholder="full"></div>
+      <button class="btn small" data-act="pick-start">Pick start (tap chart)</button>
+      <button class="btn small" data-act="pick-end">Pick end (tap chart)</button>
+      <button class="btn small ghost" data-act="clear-region">Full range</button>
+      <label style="display:flex;align-items:center;gap:5px; font-size:12.5px;"><input type="checkbox" data-ctl="showstats" ${g.showStats ? 'checked' : ''}> Show stats</label>
+      <span class="hint" data-hint></span>
+    </div>
+    <div class="results-box" data-results></div>
+  `;
+}
+function iconImage() { return '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/><path d="M21 16l-5.5-5.5L7 19" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>'; }
+
+function wireGraphCard(g, card) {
+  const setVisibility = () => {
+    card.querySelectorAll('[data-show-if]').forEach(el => { el.style.display = el.dataset.showIf === g.viewMode ? '' : 'none'; });
+  };
+  setVisibility();
+  card.querySelector('[data-ctl="x"]').addEventListener('change', (e) => { g.xColId = e.target.value; renderGraphChart(g); scheduleSave(); });
+  card.querySelector('[data-ctl="ychips"]').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip'); if (!chip) return;
+    const id = chip.dataset.col;
+    if (g.yColIds.includes(id)) g.yColIds = g.yColIds.filter(x => x !== id);
+    else g.yColIds.push(id);
+    chip.classList.toggle('active');
+    renderGraphChart(g); scheduleSave();
+  });
+  card.querySelector('[data-ctl="viewseg"]').addEventListener('click', (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    g.viewMode = btn.dataset.v;
+    card.querySelectorAll('[data-ctl="viewseg"] button').forEach(b => b.classList.toggle('active', b === btn));
+    setVisibility();
+    renderGraphChart(g); scheduleSave();
+  });
+  const connectEl = card.querySelector('[data-ctl="connect"]');
+  if (connectEl) connectEl.addEventListener('change', (e) => { g.connectPoints = e.target.checked; renderGraphChart(g); scheduleSave(); });
+  const fftWinEl = card.querySelector('[data-ctl="fftwindow"]');
+  if (fftWinEl) fftWinEl.addEventListener('change', (e) => { g.fftWindow = e.target.value; renderGraphChart(g); scheduleSave(); });
+  const fitEl = card.querySelector('[data-ctl="fit"]');
+  if (fitEl) fitEl.addEventListener('change', (e) => { g.fitType = e.target.value; renderGraphChart(g); scheduleSave(); });
+  const xminEl = card.querySelector('[data-ctl="xmin"]'), xmaxEl = card.querySelector('[data-ctl="xmax"]');
+  xminEl.addEventListener('change', (e) => { g.xMin = e.target.value === '' ? null : Number(e.target.value); renderGraphChart(g); scheduleSave(); });
+  xmaxEl.addEventListener('change', (e) => { g.xMax = e.target.value === '' ? null : Number(e.target.value); renderGraphChart(g); scheduleSave(); });
+  const statsEl = card.querySelector('[data-ctl="showstats"]');
+  if (statsEl) statsEl.addEventListener('change', (e) => { g.showStats = e.target.checked; renderGraphChart(g); scheduleSave(); });
+  card.querySelector('[data-act="clear-region"]').addEventListener('click', () => { g.xMin = null; g.xMax = null; xminEl.value = ''; xmaxEl.value = ''; renderGraphChart(g); scheduleSave(); });
+  card.querySelector('[data-act="remove-graph"]').addEventListener('click', () => {
+    g.chart && g.chart.destroy();
+    state.graphs = state.graphs.filter(x => x.id !== g.id);
+    renderGraphs(); scheduleSave();
+  });
+  card.querySelector('[data-act="save-image"]').addEventListener('click', () => openSaveImageModal(g));
+  const hintEl = card.querySelector('[data-hint]');
+  card.querySelector('[data-act="pick-start"]').addEventListener('click', () => { g.pickMode = 'start'; hintEl.textContent = 'Tap a point on the chart to set the start.'; });
+  card.querySelector('[data-act="pick-end"]').addEventListener('click', () => { g.pickMode = 'end'; hintEl.textContent = 'Tap a point on the chart to set the end.'; });
+}
+
+function openSaveImageModal(g) {
+  if (!g.chart) return;
+  const dataUrl = g.chart.toBase64Image('image/png', 1);
+  openModal(`
+    <div class="modal-head"><h3>Save graph as image</h3><button class="icon-btn" id="mClose">${iconClose()}</button></div>
+    <div class="modal-body">
+      <div class="note-box">On iPad: press and hold the image, then choose "Save to Photos" or "Add to Photos".</div>
+      <img class="export-preview" src="${dataUrl}" alt="Graph image">
+    </div>
+    <div class="modal-foot"><button class="btn ghost" id="mDownload">Try download</button><button class="btn primary" id="mDone">Done</button></div>
+  `);
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('mDone').onclick = closeModal;
+  document.getElementById('mDownload').onclick = () => offerDownload('curvewright-graph.png', dataUrlToBlob(dataUrl));
+}
+
+function renderGraphChart(g) {
+  const card = document.querySelector(`[data-graph="${g.id}"]`);
+  if (!card) return;
+  const canvas = card.querySelector('canvas');
+  const resultsBox = card.querySelector('[data-results]');
+  const xCol = getCol(g.xColId);
+  const yCols = g.yColIds.map(getCol).filter(Boolean);
+
+  if (!xCol || yCols.length === 0) {
+    if (g.chart) { g.chart.destroy(); g.chart = null; }
+    resultsBox.innerHTML = `<div class="empty-note">Choose an X column and at least one Y column.</div>`;
+    return;
+  }
+
+  const gridColor = cssVar('grid-line');
+  const inkSoft = cssVar('ink-soft');
+  const ink = cssVar('ink');
+  const surface = cssVar('surface');
+
+  if (g.viewMode === 'fft') {
+    if (yCols.length > 1) resultsBox.innerHTML = `<div class="empty-note">FFT uses the first selected Y column (${escapeHtml(yCols[0].label)}).</div>`;
+    else resultsBox.innerHTML = '';
+    const pts = pairData(xCol, yCols[0]);
+    if (pts.length < 4) { resultsBox.innerHTML += `<div class="empty-note">Need at least 4 points for a spectrum.</div>`; if (g.chart) { g.chart.destroy(); g.chart = null; } return; }
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const dts = []; for (let i = 1; i < xs.length; i++) dts.push(xs[i] - xs[i - 1]);
+    const dt = dts.reduce((a, b) => a + b, 0) / dts.length;
+    const dtStd = Math.sqrt(dts.reduce((s, d) => s + (d - dt) ** 2, 0) / dts.length);
+    const uneven = dtStd > 0.15 * Math.abs(dt);
+    const { freqs, mags } = computeFFT(ys, dt, { window: g.fftWindow });
+    const spectrumPts = freqs.map((f, i) => ({ x: f, y: mags[i] }));
+    const domFreq = dominantFrequency(freqs, mags);
+
+    if (g.chart) g.chart.destroy();
+    g.chart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { datasets: [{ label: 'Magnitude', data: spectrumPts.slice(1), borderColor: cssVar(yCols[0].colorVar), backgroundColor: seriesRGBA(yCols[0].colorVar, .18), fill: true, borderWidth: 1.6, pointRadius: 0, tension: 0 }] },
+      options: chartBaseOptions(`Frequency (1/${xCol.unit || 'x'})`, 'Magnitude', gridColor, inkSoft, ink, null),
+    });
+    resultsBox.innerHTML += `
+      <div class="results-row">
+        <div class="eqn">Dominant frequency ≈ ${fmtSig(domFreq)} ${xCol.unit ? '1/' + escapeHtml(xCol.unit) : ''} ${xCol.unit === 's' ? '(Hz)' : ''}</div>
+        ${uneven ? '<span class="hint" style="color:var(--danger)">⚠️ X values are unevenly spaced — spectrum assumes uniform sampling and may be inaccurate.</span>' : ''}
+        <button class="btn small" id="btnSendPeak">Send peak → seed Sinusoidal fit</button>
+      </div>`;
+    document.getElementById('btnSendPeak').onclick = () => {
+      g.sinSeedFreq = domFreq; g.viewMode = 'data'; g.fitType = 'sinusoidal';
+      renderGraphs(); scheduleSave();
+    };
+    return;
+  }
+
+  // ---- data view ----
+  const datasets = [];
+  const allPts = [];
+  yCols.forEach((yc) => {
+    const pts = pairData(xCol, yc);
+    allPts.push(...pts);
+    datasets.push({
+      label: yc.label, data: pts, showLine: g.connectPoints, borderColor: cssVar(yc.colorVar),
+      backgroundColor: cssVar(yc.colorVar), pointRadius: 3, pointHoverRadius: 5, borderWidth: 1.6, tension: 0,
+    });
+  });
+
+  let fitResult = null;
+  const primaryY = yCols[0];
+  const primaryPts = regionFilter(pairData(xCol, primaryY), g.xMin, g.xMax);
+  if (g.fitType !== 'none' && primaryPts.length >= 2) {
+    const xs = primaryPts.map(p => p.x), ys = primaryPts.map(p => p.y);
+    try {
+      fitResult = g.fitType === 'auto' ? autoFit(xs, ys, g.sinSeedFreq) : runFit(g.fitType, xs, ys, g.sinSeedFreq);
+    } catch (e) { fitResult = null; }
+    if (fitResult) {
+      const lo = Math.min(...xs), hi = Math.max(...xs);
+      const N = 120;
+      const curve = [];
+      for (let i = 0; i <= N; i++) { const x = lo + (hi - lo) * (i / N); curve.push({ x, y: fitResult.predict(x) }); }
+      datasets.push({ label: (fitResult.kind || g.fitType) + ' fit', data: curve, type: 'line', showLine: true, borderColor: cssVar('accent'), borderWidth: 2.2, borderDash: [6, 3], pointRadius: 0, fill: false });
+    }
+  }
+
+  if (g.chart) g.chart.destroy();
+  g.chart = new Chart(canvas.getContext('2d'), {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      ...chartBaseOptions(xCol.unit ? `${xCol.label} (${xCol.unit})` : xCol.label, yCols.length === 1 ? (yCols[0].unit ? `${yCols[0].label} (${yCols[0].unit})` : yCols[0].label) : 'Value', gridColor, inkSoft, ink, { xMin: g.xMin, xMax: g.xMax, color: seriesRGBA('accent', .14) }),
+      onClick: (evt, elements, chart) => {
+        if (!g.pickMode) return;
+        const xScale = chart.scales.x;
+        const rect = chart.canvas.getBoundingClientRect();
+        const canvasX = (evt.native ? evt.native.clientX : evt.clientX) - rect.left;
+        const val = xScale.getValueForPixel(canvasX);
+        if (val == null) return;
+        if (g.pickMode === 'start') g.xMin = val; else g.xMax = val;
+        g.pickMode = null;
+        const hintEl = card.querySelector('[data-hint]'); if (hintEl) hintEl.textContent = '';
+        const xminEl = card.querySelector('[data-ctl="xmin"]'), xmaxEl = card.querySelector('[data-ctl="xmax"]');
+        if (xminEl) xminEl.value = g.xMin != null ? fmtSig(g.xMin) : '';
+        if (xmaxEl) xmaxEl.value = g.xMax != null ? fmtSig(g.xMax) : '';
+        renderGraphChart(g); scheduleSave();
+      },
+    },
+  });
+
+  // ---- results: fit + stats ----
+  let html = '';
+  if (fitResult) {
+    html += `<div class="results-row"><div class="eqn">${escapeHtml(fitResult.label)}</div><span class="r2-pill">R² = ${fmtSig(fitResult.r2)}</span>${g.fitType === 'auto' ? `<span class="hint">best of automatic candidates</span>` : ''}</div>`;
+  } else if (g.fitType !== 'none') {
+    html += `<div class="empty-note">Not enough data in the selected region to fit a ${escapeHtml(FIT_LABELS[g.fitType] || g.fitType)} curve.</div>`;
+  }
+  if (g.showStats) {
+    yCols.forEach(yc => {
+      const pts = regionFilter(pairData(xCol, yc), g.xMin, g.xMax);
+      const s = describeStats(pts.map(p => p.y));
+      if (!s) return;
+      html += `<div class="stat-grid" style="border-top:1px solid var(--border); padding-top:8px;">
+        <div class="stat-item"><span class="k">${escapeHtml(yc.label)} · n</span><span class="v num">${s.n}</span></div>
+        <div class="stat-item"><span class="k">mean</span><span class="v num">${fmtSig(s.mean)}</span></div>
+        <div class="stat-item"><span class="k">median</span><span class="v num">${fmtSig(s.median)}</span></div>
+        <div class="stat-item"><span class="k">stdev</span><span class="v num">${fmtSig(s.stdev)}</span></div>
+        <div class="stat-item"><span class="k">min</span><span class="v num">${fmtSig(s.min)}</span></div>
+        <div class="stat-item"><span class="k">max</span><span class="v num">${fmtSig(s.max)}</span></div>
+        <div class="stat-item"><span class="k">range</span><span class="v num">${fmtSig(s.range)}</span></div>
+      </div>`;
+    });
+  }
+  resultsBox.innerHTML = html || `<div class="empty-note">No fit or stats shown — turn on "Show stats" or choose a curve fit.</div>`;
+}
+
+function chartBaseOptions(xLabel, yLabel, gridColor, inkSoft, ink, regionOpts) {
+  return {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    parsing: false,
+    interaction: { mode: 'nearest', intersect: false },
+    plugins: {
+      legend: { display: true, labels: { color: ink, boxWidth: 12, font: { family: "'IBM Plex Sans'", size: 11.5 } } },
+      tooltip: { titleFont: { family: "'IBM Plex Mono'" }, bodyFont: { family: "'IBM Plex Mono'" } },
+      regionBand: regionOpts || { xMin: null, xMax: null },
+    },
+    scales: {
+      x: { type: 'linear', title: { display: true, text: xLabel, color: inkSoft, font: { family: "'IBM Plex Sans'", size: 12 } }, grid: { color: gridColor }, ticks: { color: inkSoft, font: { family: "'IBM Plex Mono'", size: 10.5 } } },
+      y: { title: { display: true, text: yLabel, color: inkSoft, font: { family: "'IBM Plex Sans'", size: 12 } }, grid: { color: gridColor }, ticks: { color: inkSoft, font: { family: "'IBM Plex Mono'", size: 10.5 } } },
+    },
+  };
+}
+
+/* =========================================================================
+   THEME-AWARE CHART REFRESH
+   ========================================================================= */
+function refreshAllChartsTheme() { state.graphs.forEach(renderGraphChart); }
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAllChartsTheme);
+}
+new MutationObserver(refreshAllChartsTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* =========================================================================
+   SAMPLE DATA
+   ========================================================================= */
+function seedDefault() { loadSample('projectile', true); }
+
+function loadSample(which, silent) {
+  state.columns = []; state.rowCount = 0; colorCounter = 0;
+  state.graphs.forEach(g => g.chart && g.chart.destroy()); state.graphs = [];
+  if (which === 'projectile') {
+    const n = 15, dt = 0.1;
+    const t = [], h = [];
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    for (let i = 0; i < n; i++) {
+      const ti = i * dt;
+      let hi = 1 + 5 * ti - 4.9 * ti * ti;
+      if (hi < 0) hi = null;
+      t.push(Math.round(ti * 100) / 100);
+      h.push(hi === null ? null : Math.round((hi + (rnd() - 0.5) * 0.03) * 1000) / 1000);
+    }
+    addColumn({ label: 'Time', unit: 's', kind: 'data', values: t });
+    addColumn({ label: 'Height', unit: 'm', kind: 'data', values: h });
+    ensureRowCount(n);
+    addGraph(state.columns[0].id, [state.columns[1].id]);
+    state.graphs[0].fitType = 'quadratic';
+  } else if (which === 'oscillation') {
+    const n = 128, dt = 0.02;
+    const t = [], y = [];
+    let seed = 11;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    for (let i = 0; i < n; i++) {
+      const ti = i * dt;
+      const yi = 1.0 * Math.sin(2 * Math.PI * 3 * ti) + 0.3 * Math.sin(2 * Math.PI * 7 * ti + 1) + (rnd() - 0.5) * 0.08;
+      t.push(Math.round(ti * 1000) / 1000);
+      y.push(Math.round(yi * 1000) / 1000);
+    }
+    addColumn({ label: 'Time', unit: 's', kind: 'data', values: t });
+    addColumn({ label: 'Signal', unit: 'V', kind: 'data', values: y });
+    ensureRowCount(n);
+    addGraph(state.columns[0].id, [state.columns[1].id]);
+    state.graphs[0].viewMode = 'fft';
+  }
+  afterDataChange();
+  renderGraphs();
+  if (!silent) showToast('Loaded sample: ' + which);
+}
+document.getElementById('sampleSelect').addEventListener('change', (e) => {
+  const val = e.target.value;
+  e.target.value = '';
+  if (!val) return;
+  if (state.columns.length > 0 && !confirm('Loading a sample replaces your current table and graphs. Continue?')) return;
+  loadSample(val, false);
+});
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function init() {
+  const restored = loadState();
+  if (!restored || state.columns.length === 0) seedDefault();
+  renderTable();
+  renderGraphs();
+}
+init();
+
+})();
+</script>
+</body>
+</html>
